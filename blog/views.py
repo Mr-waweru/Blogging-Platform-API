@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from .models import *
 from .serializers import *
 from .permissions import IsOwnerOrReadOnly
+from django.db.models import Count, Avg
+from django.core.mail import send_mail
 
 class PostListCreateView(generics.ListCreateAPIView):
     """View to list all posts or create a new post"""
@@ -35,7 +37,7 @@ class PostListCreateView(generics.ListCreateAPIView):
 
 
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """View to retrieve, update, or delete a single post"""
+    """View to retrieve, update, or delete a single post with actions for liking and rating"""
     
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -55,6 +57,46 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    def get(self, request, *args, **kwargs):
+        """Retrieve a single post along with total likes and average rating"""
+        post = self.get_objects()
+        post_data = {
+            "post": PostSerializer(post).data,
+            "total_likes": post.likes.count(),
+            "average_rating": post.ratings.aggregate(Avg("rating"))["rating__avg"] or 0  # Calculate average rating
+        }
+        return Response(post_data, status=status.HTTP_200_OK)
+    
+    def post(self, request, *args, **kwargs):
+        """Handle actions: like or rate a post"""
+        post = self.get_object()
+        action = request.data.get("action")
+
+        if action == "like":
+            # Check if the user has already liked the post
+            existing_like = Like.objects.filter(post=post, user = request.user)
+            if existing_like.exists():
+                # If the user has already liked the post, unlike it
+                existing_like.delete()
+                return Response({"detail": "Post unliked successfully!"}, status=status.HTTP_200_OK)
+            else:
+                # Otherwise, add a like
+                Like.objects.create(post=post, user = request.user)
+                return Response({"detail": "Post liked successfully!"}, status=status.HTTP_200_OK)
+
+        elif action == "rate":
+            # Validate and update or create a rating for the post
+            rating_value = request.data.get("rating")
+            if not rating_value or not (1 <= int(rating_value) <= 5):
+                return Response({"detail": "Invalid rating value. Must be between 1 and 5."}, status=status.HTTP_400_BAD_REQUEST)
+            rating, created = Rating.objects.update_or_create(
+                post=post, user=request.user,
+                defaults={"rating": rating_value}   # Update or set the rating value
+            )
+            return Response({"detail": "Post rated successfully!"}, status=status.HTTP_200_OK)
+        
+        return Response({"detail": "Invalid action. Use 'like' or 'rate'."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PostsByCategory(generics.ListAPIView):
@@ -112,3 +154,46 @@ class CommentListCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class MostLikedPostsView(generics.ListAPIView):
+    """View to list most liked posts"""
+
+    serializer_class = PostSerializer
+
+    def get_queryset(self):
+        """Annotate posts with like counts and order by the highest like count"""
+        most_liked = Post.objects.annotate(like_count=Count("likes")).order_by("-like_count")
+        return most_liked
+    
+
+class HighestRatedPostsView(generics.ListAPIView):
+    """View to list highest rated posts"""
+
+    serializer_class = PostSerializer
+
+    def get_queryset(self):
+        """Annotate posts with average ratings and order by the highest average rating"""
+        highest_rated_post = Post.objects.annotate(average_rating=Avg("ratings__rating")).order_by("-average_rating")
+        return highest_rated_post
+    
+
+class PostShareView(generics.GenericAPIView):
+    """View to share a post via email."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        post_id = self.kwargs["post_id"]
+        post = Post.objects.get(id=post_id)
+        recipient_email = request.data.get("email") # Expecting email from the request body
+
+        if not recipient_email:
+            return Response({"detail": "Email is required to share the post."}, status=status.HTTP_400_BAD_REQUEST)
+
+        subject = f"Check out this post: {post.title}"
+        message = f"Hello,\n\nI wanted to share this interesting post with you:\n\nTitle: {post.title}\n\n{post.content}\n\nBest regards,"
+        from_email = settings.DEFAULT_FROM_EMAIL
+
+        send_mail(subject, message, from_email, [recipient_email])
+
+        return Response({"detail": "Post shared successfully!"}, status=status.HTTP_200_OK)
