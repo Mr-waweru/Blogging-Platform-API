@@ -46,7 +46,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     def update(self, request, *args, **kwargs):
         """Handle PUT request"""
         partial = kwargs.pop("partial", False)
-        instance = self.get_objects()
+        instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -145,8 +145,10 @@ class CommentListCreateView(generics.ListCreateAPIView):
         return Comment.objects.filter(post_id=post_id)
     
     def perform_create(self, serializer):
-        """Set the author of the comment to the currently authenticated user"""
-        serializer.save(author=self.request.user)
+        """Associate the comment with the post and the current user"""
+        post_id = self.kwargs.get("post_id")    # Get the post_id from the URL
+        post = Post.objects.get(id=post_id) # Retrieve the corresponding Post object
+        serializer.save(author=self.request.user, post=post)    # Save the comment with post and author
 
     def create(self, request, *args, **kwargs):
         """Handle POST request"""
