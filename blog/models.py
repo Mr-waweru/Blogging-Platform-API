@@ -36,7 +36,7 @@ class CustomUser(AbstractUser):
     objects = CustomUserManager()
 
     def __str__(self):
-        return f"User <{self.email}>"
+        return (self.username).lower()
 
 
 class Category(models.Model):
@@ -60,6 +60,7 @@ class Category(models.Model):
                 fields=["name"], name="unique_category_name", condition=models.Q(name__iexact=models.F("name"))
             )
         ]
+        verbose_name_plural = "Categories"  # Correct pluralization
 
 
 class Tag(models.Model):
@@ -100,3 +101,26 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.author} on {self.post.title}"
+    
+
+class Like(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='likes')
+
+    class Meta:
+        unique_together = ("post", "user")  # Ensures a user can like a post only once
+
+    def __str__(self):
+       return f"liked by {self.user.username}"
+    
+
+class Rating(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="ratings")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ratings")
+    rating = models.PositiveIntegerField(choices=[(1, "1"), (2, "2"), (3, "3"), (4, "4"), (5, "5")])
+
+    class Meta:
+        unique_together = ("post", "user")  # Ensures one rating per user per post
+
+    def __str__(self):
+        return f"Rating of {self.rating} by {self.user.username} for {self.post.title}"
