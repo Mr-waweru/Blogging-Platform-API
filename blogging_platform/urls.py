@@ -14,7 +14,7 @@ schema_view = get_schema_view(
    openapi.Info(
       title="Blogging Platform API",
       default_version='v1',
-      description="A DRF API for blogging that allows users to create and comment on different posts.",
+      description="A DRF API for blogging that allows users to create and comment on different posts.\nUser can also view most liked post or a post with the highest rating.\nA post can also be shared via email",
       contact=openapi.Contact(email="george@gmail.com"),
    ),
    public=True,
