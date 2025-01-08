@@ -1,136 +1,64 @@
-# Blogging-Platform-API
+# Blogging API
 
-## **1. Overview**
-The Blogging Platform API uses **Token-Based Authentication** provided by Django Rest Framework (DRF). This ensures that only authenticated users can access protected API endpoints.
-
----
-
-## **2. Prerequisites**
-
-Before testing the authentication, ensure that:
-1. You have a Django superuser or regular user.
-2. You have set up Django REST Framework with `TokenAuthentication`.
+A Django Rest Framework (DRF)-based API that allows users to manage blog posts. Users can create, update, delete, and view blog posts, filter posts by category, tag or author, and manage comments. The API also includes JWT-based authentication for secure access.
 
 ---
 
-## **3. Generating a Token for a User**
+## Table of Contents
 
-### **Step 1: Create a User (if not already created)**
-Run the following command to create a user:
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+
+---
+
+## Overview
+
+The Blogging API is designed to provide a platform for managing blog posts and comments. Users can:
+- Perform CRUD operations on blog posts.
+- Retrieve posts by category or author.
+- Add and view comments on blog posts.
+- Authenticate using JWT for secure access.
+
+**Technologies used:**
+- **Backend Framework**: Django Rest Framework (DRF)
+- **Authentication**: JWT (JSON Web Token)
+
+---
+
+## Features
+
+- Create, retrieve, update, and delete blog posts.
+- Filter blog posts by category and author.
+- Add and view comments on posts.
+- Secure API access using JWT authentication.
+
+---
+
+## Installation
+
+Follow these steps to set up the project locally:
 
 ```bash
-python3 manage.py createsuperuser
-```
-- Enter the **username**, **email** (optional), and **password**.
+# Clone the repository
+git clone https://github.com/Mr-waweru/Blogging-Platform-API.git
 
-### **Step 2: Generate a Token for the User**
-Run the following command to create a token for the user:
+# Navigate to the project directory
+cd blogging-api
 
-```bash
-python3 manage.py drf_create_token <username>
-```
+# Set up a virtual environment
+python -m venv venv
 
-For example:
-```bash
-python3 manage.py drf_create_token user1
-```
+# Activate the virtual environment
+source env/bin/activate   # On Linux/Mac
+venv\Scripts\activate      # On Windows
 
-**Output**:
-```text
-Generated token <your-token>
-```
+# Install dependencies
+pip install -r requirements.txt
 
----
+# Apply migrations
+python manage.py makemigrations
+python manage.py migrate
 
-## **4. Testing Authentication**
-
-### **Step 1: Obtain Token**
-To retrieve a token for an existing user:
-
-- **Endpoint**: `/api/token/`  
-- **Method**: `POST`  
-- **Body (JSON)**:
-   ```json
-   {
-       "username": "user1",
-       "password": "your-password"
-   }
-   ```
-
-**Response**:
-```json
-{
-    "token": "your-generated-token"
-}
-```
-
----
-
-### **Step 2: Access Protected Endpoints**
-
-To access any secure endpoint, you must include the token in the **Authorization** header.
-
-#### **Header Example**:
-```http
-Authorization: Token your-generated-token
-```
-
----
-
-### **Step 3: Example - Access `/api/posts/`**
-
-- **Endpoint**: `/api/posts/`  
-- **Method**: `GET`  
-- **Header**:
-   ```
-   Authorization: Token your-generated-token
-   ```
-
-**Request Example**:
-```http
-GET /api/posts/ HTTP/1.1
-Host: example.com
-Authorization: Token your-generated-token
-```
-
-**Response Example**:
-```json
-[
-    {
-        "id": 1,
-        "title": "First Post",
-        "content": "This is the first post.",
-        "author": "John Doe",
-        "created_at": "2024-12-15T10:00:00Z"
-    }
-]
-```
-
----
-
-## **5. Troubleshooting**
-
-1. **User Does Not Exist**:  
-   - Ensure you have created a user with `createsuperuser`.
-
-2. **Token Missing in Header**:  
-   - Ensure the `Authorization` header is correctly set with `Token <your-token>`.
-
-3. **Permission Denied (403)**:  
-   - Ensure your endpoint allows authenticated users by adding:
-     ```python
-     @permission_classes([IsAuthenticated])
-     ```
-
----
-
-## **6. Notes**
-
-- Authentication is required for all endpoints unless explicitly set otherwise.
-- Tokens are persistent and must be stored securely. Treat them like passwords.
-
----
-
-## **Conclusion**
-
-This setup ensures that the Blogging Platform API is secure and only authenticated users can access protected resources. Use the provided steps to test the authentication functionality.
+# Start the server
+python manage.py runserver
