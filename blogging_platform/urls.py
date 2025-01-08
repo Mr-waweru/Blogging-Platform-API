@@ -12,10 +12,10 @@ from rest_framework_simplejwt.views import (
 # from drf-yasg documentation
 schema_view = get_schema_view(
    openapi.Info(
-      title="Pizza Delivery API",
+      title="Blogging Platform API",
       default_version='v1',
-      description="A REST API for a pizza delivery service.",
-      contact=openapi.Contact(email="giggs@gmail.com"),
+      description="A DRF API for blogging that allows users to create and comment on different posts.",
+      contact=openapi.Contact(email="george@gmail.com"),
    ),
    public=True,
    permission_classes=(permissions.AllowAny,),
@@ -30,7 +30,5 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # Documentaing using drf-yasg
-    path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
