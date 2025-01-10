@@ -60,7 +60,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     
     def get(self, request, *args, **kwargs):
         """Retrieve a single post along with total likes and average rating"""
-        post = self.get_objects()
+        post = self.get_object()
         post_data = {
             "post": PostSerializer(post).data,
             "total_likes": post.likes.count(),
